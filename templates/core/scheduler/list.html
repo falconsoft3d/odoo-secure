@@ -1,0 +1,200 @@
+{% extends 'core/layout.html' %}
+
+{% block page_title %}Cron Jobs{% endblock %}
+{% block page_subtitle %}Historial de todas las ejecuciones programadas del scheduler{% endblock %}
+
+{% block content %}
+
+<!-- Stat cards -->
+<div class="grid grid-cols-3 gap-4 mb-6">
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+    <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Total ejecuciones</p>
+    <p class="text-2xl font-bold text-white">{{ total }}</p>
+  </div>
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+    <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Exitosas</p>
+    <p class="text-2xl font-bold text-green-400">{{ ok_count }}</p>
+  </div>
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+    <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Con error</p>
+    <p class="text-2xl font-bold text-red-400">{{ error_count }}</p>
+  </div>
+</div>
+
+<!-- Filters -->
+<form method="get" class="bg-gray-900 border border-gray-800 rounded-xl p-4 mb-6">
+  <div class="flex flex-wrap gap-3 items-end">
+
+    <div class="flex-1 min-w-48">
+      <label class="block text-xs text-gray-400 mb-1">Tarea</label>
+      <select name="job"
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500">
+        <option value="">Todas</option>
+        {% for val, label in job_choices %}
+        <option value="{{ val }}" {% if job_filter == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="flex-1 min-w-36">
+      <label class="block text-xs text-gray-400 mb-1">Estado</label>
+      <select name="status"
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500">
+        <option value="">Todos</option>
+        <option value="ok"    {% if status_filter == 'ok' %}selected{% endif %}>OK</option>
+        <option value="error" {% if status_filter == 'error' %}selected{% endif %}>Error</option>
+      </select>
+    </div>
+
+    <div class="flex gap-2">
+      <button type="submit"
+              class="bg-brand-600 hover:bg-brand-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+        Filtrar
+      </button>
+      <a href="{% url 'scheduler_log' %}"
+         class="bg-gray-700 hover:bg-gray-600 text-gray-200 px-4 py-2 rounded-lg text-sm font-medium transition">
+        Limpiar
+      </a>
+    </div>
+  </div>
+</form>
+
+<!-- Table -->
+<div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+  {% if logs %}
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-800 text-left">
+          <th class="px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Inicio</th>
+          <th class="px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Tarea</th>
+          <th class="px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Estado</th>
+          <th class="px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Duración</th>
+          <th class="px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Detalle</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-800">
+        {% for log in logs %}
+        <tr class="hover:bg-gray-800/50 transition {% if log.status == 'error' %}bg-red-950/20{% endif %}">
+
+          <!-- Inicio -->
+          <td class="px-4 py-3 text-gray-300 whitespace-nowrap font-mono text-xs">
+            {{ log.started_at|date:"Y-m-d" }}<br>
+            <span class="text-gray-500">{{ log.started_at|date:"H:i:s" }}</span>
+          </td>
+
+          <!-- Tarea -->
+          <td class="px-4 py-3">
+            {% if log.job_id == 'check_all_servers' %}
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-blue-900/50 flex items-center justify-center shrink-0">
+                  <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>
+                  </svg>
+                </div>
+                <span class="text-gray-200 text-sm">Chequeo de servidores</span>
+              </div>
+            {% elif log.job_id == 'read_security_logs' %}
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-orange-900/50 flex items-center justify-center shrink-0">
+                  <svg class="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                  </svg>
+                </div>
+                <span class="text-gray-200 text-sm">Logs de seguridad</span>
+              </div>
+            {% elif log.job_id == 'read_odoo_logs' %}
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-green-900/50 flex items-center justify-center shrink-0">
+                  <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                  </svg>
+                </div>
+                <span class="text-gray-200 text-sm">Logs Odoo</span>
+              </div>
+            {% else %}
+              <span class="text-gray-400 text-xs font-mono">{{ log.job_id }}</span>
+            {% endif %}
+          </td>
+
+          <!-- Estado -->
+          <td class="px-4 py-3">
+            {% if log.status == 'ok' %}
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-900/50 text-green-300 border border-green-700/50">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                OK
+              </span>
+            {% else %}
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-900/50 text-red-300 border border-red-700/50">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Error
+              </span>
+            {% endif %}
+          </td>
+
+          <!-- Duración -->
+          <td class="px-4 py-3 text-gray-400 font-mono text-xs whitespace-nowrap">
+            {% if log.duration_ms < 1000 %}
+              {{ log.duration_ms }} ms
+            {% else %}
+              {{ log.duration_ms|floatformat:0 }} ms
+            {% endif %}
+          </td>
+
+          <!-- Detalle / error -->
+          <td class="px-4 py-3 max-w-sm">
+            {% if log.detail %}
+              <details class="group">
+                <summary class="cursor-pointer text-xs text-red-400 hover:text-red-300 select-none">
+                  Ver error
+                </summary>
+                <pre class="mt-2 font-mono text-xs text-red-300 bg-gray-950 rounded p-2 whitespace-pre-wrap break-all max-h-40 overflow-y-auto">{{ log.detail }}</pre>
+              </details>
+            {% else %}
+              <span class="text-gray-600 text-xs italic">—</span>
+            {% endif %}
+          </td>
+
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if is_paginated %}
+  <div class="px-4 py-3 border-t border-gray-800 flex items-center justify-between text-xs text-gray-400">
+    <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+    <div class="flex gap-1">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}&job={{ job_filter }}&status={{ status_filter }}"
+           class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg transition">← Anterior</a>
+      {% endif %}
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}&job={{ job_filter }}&status={{ status_filter }}"
+           class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg transition">Siguiente →</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="text-center py-16">
+    <svg class="w-12 h-12 text-gray-700 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+    <p class="text-gray-500 text-sm">Aún no hay ejecuciones registradas.</p>
+    <p class="text-gray-600 text-xs mt-1">Los cron jobs aparecerán aquí al ejecutarse (cada minuto).</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

@@ -37,6 +37,9 @@ COPY --from=builder /install /usr/local
 # Copy project source
 COPY . .
 
+# Ensure static source dir exists before collectstatic
+RUN mkdir -p /app/static
+
 # Collect static files
 RUN python manage.py collectstatic --noinput
 

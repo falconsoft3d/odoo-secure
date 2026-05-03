@@ -27,4 +27,6 @@ urlpatterns = [
     path('odoo-logs/clear/', views.OdooLogClearView.as_view(), name='odoo_log_clear'),
     # Historial de comandos
     path('commands/', views.CommandLogView.as_view(), name='commands'),
+    # Historial de cron jobs
+    path('scheduler/', views.SchedulerLogView.as_view(), name='scheduler_log'),
 ]

@@ -242,3 +242,42 @@ class CommandLog(models.Model):
         user = self.triggered_by.username if self.triggered_by_id else 'scheduler'
         return f'{user} → {self.command[:60]} @ {self.executed_at:%Y-%m-%d %H:%M}'
 
+
+# ── Scheduler execution history ───────────────────────────────────────────
+
+class SchedulerLog(models.Model):
+    JOB_SERVERS = 'check_all_servers'
+    JOB_SECURITY = 'read_security_logs'
+    JOB_ODOO = 'read_odoo_logs'
+    JOB_CHOICES = [
+        (JOB_SERVERS, 'Chequeo de servidores Odoo'),
+        (JOB_SECURITY, 'Lectura de logs de seguridad'),
+        (JOB_ODOO, 'Lectura de logs de aplicación Odoo'),
+    ]
+
+    STATUS_OK = 'ok'
+    STATUS_ERROR = 'error'
+    STATUS_CHOICES = [
+        (STATUS_OK, 'OK'),
+        (STATUS_ERROR, 'Error'),
+    ]
+
+    job_id = models.CharField(max_length=60, choices=JOB_CHOICES, verbose_name='Tarea', db_index=True)
+    started_at = models.DateTimeField(verbose_name='Inicio', db_index=True)
+    finished_at = models.DateTimeField(verbose_name='Fin')
+    duration_ms = models.IntegerField(verbose_name='Duración (ms)')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_OK, db_index=True)
+    detail = models.TextField(blank=True, verbose_name='Detalle / error')
+
+    class Meta:
+        ordering = ['-started_at']
+        verbose_name = 'Ejecución del scheduler'
+        verbose_name_plural = 'Ejecuciones del scheduler'
+
+    def __str__(self):
+        return f'{self.get_job_id_display()} — {self.started_at:%Y-%m-%d %H:%M:%S} [{self.status}]'
+
+    @property
+    def job_label(self):
+        return dict(self.JOB_CHOICES).get(self.job_id, self.job_id)
+

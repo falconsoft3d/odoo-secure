@@ -6,7 +6,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from django.urls import reverse_lazy
 from django.http import HttpResponseNotAllowed
-from .models import ServerConfig, ServerCheckLog, SecurityEvent, OdooLogSource, OdooLogEntry, CommandLog
+from .models import ServerConfig, ServerCheckLog, SecurityEvent, OdooLogSource, OdooLogEntry, CommandLog, SchedulerLog
 from .forms import ServerConfigForm, OdooLogSourceForm
 
 
@@ -336,6 +336,36 @@ class OdooLogClearView(LoginRequiredMixin, View):
 
 
 # ── Command Log ──────────────────────────────────────────────────────────────
+
+class SchedulerLogView(LoginRequiredMixin, ListView):
+    model = SchedulerLog
+    template_name = 'core/scheduler/list.html'
+    context_object_name = 'logs'
+    paginate_by = 100
+    login_url = '/login/'
+
+    def get_queryset(self):
+        qs = SchedulerLog.objects.all()
+        job_id = self.request.GET.get('job', '')
+        status = self.request.GET.get('status', '')
+        if job_id:
+            qs = qs.filter(job_id=job_id)
+        if status:
+            qs = qs.filter(status=status)
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Historial de Cron Jobs'
+        context['active_nav'] = 'scheduler'
+        context['total'] = SchedulerLog.objects.count()
+        context['ok_count'] = SchedulerLog.objects.filter(status=SchedulerLog.STATUS_OK).count()
+        context['error_count'] = SchedulerLog.objects.filter(status=SchedulerLog.STATUS_ERROR).count()
+        context['job_choices'] = SchedulerLog.JOB_CHOICES
+        context['job_filter'] = self.request.GET.get('job', '')
+        context['status_filter'] = self.request.GET.get('status', '')
+        return context
+
 
 class CommandLogView(LoginRequiredMixin, ListView):
     model = CommandLog
