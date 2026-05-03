@@ -29,4 +29,5 @@ urlpatterns = [
     path('commands/', views.CommandLogView.as_view(), name='commands'),
     # Historial de cron jobs
     path('scheduler/', views.SchedulerLogView.as_view(), name='scheduler_log'),
+    path('scheduler/run/<str:job_id>/', views.RunJobView.as_view(), name='run_job'),
 ]

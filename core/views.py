@@ -401,3 +401,34 @@ class CommandLogView(LoginRequiredMixin, ListView):
         context['server_filter'] = self.request.GET.get('server', '')
         context['success_filter'] = self.request.GET.get('success', '')
         return context
+
+
+class RunJobView(LoginRequiredMixin, View):
+    """Manually triggers a scheduler job and redirects back with a message."""
+    login_url = '/login/'
+
+    JOBS = {
+        'check_all_servers': 'core.monitor.check_all_servers',
+        'read_security_logs': 'core.log_parser.read_security_logs',
+        'read_odoo_logs': 'core.odoo_log_parser.read_all_odoo_logs',
+    }
+
+    def post(self, request, job_id):
+        if job_id not in self.JOBS:
+            messages.error(request, f'Tarea desconocida: {job_id}')
+            return redirect('scheduler_log')
+
+        from core.scheduler import _tracked  # noqa: PLC0415
+        import importlib  # noqa: PLC0415
+
+        module_path, fn_name = self.JOBS[job_id].rsplit('.', 1)
+        module = importlib.import_module(module_path)
+        fn = getattr(module, fn_name)
+
+        try:
+            _tracked(job_id, fn)()
+            messages.success(request, f'Tarea "{job_id}" ejecutada correctamente.')
+        except Exception as exc:
+            messages.error(request, f'Error ejecutando "{job_id}": {exc}')
+
+        return redirect('scheduler_log')
