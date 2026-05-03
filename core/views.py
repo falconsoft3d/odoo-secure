@@ -423,7 +423,7 @@ class RunJobView(LoginRequiredMixin, View):
     JOBS = {
         'check_all_servers': 'core.monitor.check_all_servers',
         'read_security_logs': 'core.log_parser.read_security_logs',
-        'read_odoo_logs': 'core.odoo_log_parser.read_all_odoo_logs',
+        'read_odoo_logs': 'core.odoo_log_parser.read_odoo_logs',
     }
 
     def post(self, request, job_id):
