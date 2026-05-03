@@ -88,6 +88,18 @@ def check_all_servers():
         else:
             error_detail = ''
 
+        # Persist command log when a restart was triggered
+        if restart_triggered:
+            from core.models import CommandLog  # noqa: PLC0415
+            CommandLog.objects.create(
+                command=server.restart_command,
+                server=server,
+                triggered_by=None,
+                source=CommandLog.SOURCE_AUTO,
+                success=bool(restart_success),
+                output=restart_output,
+            )
+
         # Persist log
         ServerCheckLog.objects.create(
             server=server,

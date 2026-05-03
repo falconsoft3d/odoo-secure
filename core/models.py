@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -203,4 +204,41 @@ class OdooLogEntry(models.Model):
 
     def __str__(self):
         return f'[{self.level}] {self.logger}: {self.message[:80]}'
+
+
+# ── Command execution history ─────────────────────────────────────────────
+
+class CommandLog(models.Model):
+    SOURCE_MANUAL = 'manual'
+    SOURCE_AUTO = 'auto'
+    SOURCE_CHOICES = [
+        (SOURCE_MANUAL, 'Manual'),
+        (SOURCE_AUTO, 'Automático'),
+    ]
+
+    command = models.TextField(verbose_name='Comando')
+    server = models.ForeignKey(
+        ServerConfig, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='command_logs', verbose_name='Servidor',
+    )
+    triggered_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        verbose_name='Ejecutado por',
+    )
+    source = models.CharField(
+        max_length=10, choices=SOURCE_CHOICES, default=SOURCE_MANUAL,
+        verbose_name='Origen', db_index=True,
+    )
+    executed_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de ejecución', db_index=True)
+    success = models.BooleanField(verbose_name='Exitoso')
+    output = models.TextField(blank=True, verbose_name='Salida del comando')
+
+    class Meta:
+        ordering = ['-executed_at']
+        verbose_name = 'Historial de comando'
+        verbose_name_plural = 'Historial de comandos'
+
+    def __str__(self):
+        user = self.triggered_by.username if self.triggered_by_id else 'scheduler'
+        return f'{user} → {self.command[:60]} @ {self.executed_at:%Y-%m-%d %H:%M}'
 

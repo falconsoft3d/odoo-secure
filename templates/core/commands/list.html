@@ -1,0 +1,230 @@
+{% extends 'core/layout.html' %}
+
+{% block page_title %}Historial de comandos{% endblock %}
+{% block page_subtitle %}Registro de todos los comandos ejecutados en el servidor{% endblock %}
+
+{% block content %}
+
+<!-- Stat cards -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+    <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Total</p>
+    <p class="text-2xl font-bold text-white">{{ total }}</p>
+  </div>
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+    <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Manuales</p>
+    <p class="text-2xl font-bold text-sky-400">{{ manual_count }}</p>
+  </div>
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+    <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Automáticos</p>
+    <p class="text-2xl font-bold text-purple-400">{{ auto_count }}</p>
+  </div>
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+    <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Fallidos</p>
+    <p class="text-2xl font-bold text-red-400">{{ failed_count }}</p>
+  </div>
+</div>
+
+<!-- Filters -->
+<form method="get" class="bg-gray-900 border border-gray-800 rounded-xl p-4 mb-6">
+  <div class="flex flex-wrap gap-3 items-end">
+
+    <div class="flex-1 min-w-36">
+      <label class="block text-xs text-gray-400 mb-1">Origen</label>
+      <select name="source"
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500">
+        <option value="">Todos</option>
+        {% for val, label in source_choices %}
+        <option value="{{ val }}" {% if source_filter == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="flex-1 min-w-36">
+      <label class="block text-xs text-gray-400 mb-1">Servidor</label>
+      <select name="server"
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500">
+        <option value="">Todos</option>
+        {% for s in servers %}
+        <option value="{{ s.pk }}" {% if server_filter == s.pk|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="flex-1 min-w-36">
+      <label class="block text-xs text-gray-400 mb-1">Resultado</label>
+      <select name="success"
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand-500">
+        <option value="">Todos</option>
+        <option value="1" {% if success_filter == '1' %}selected{% endif %}>Exitoso</option>
+        <option value="0" {% if success_filter == '0' %}selected{% endif %}>Fallido</option>
+      </select>
+    </div>
+
+    <div class="flex gap-2">
+      <button type="submit"
+              class="bg-brand-600 hover:bg-brand-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+        Filtrar
+      </button>
+      <a href="{% url 'commands' %}"
+         class="bg-gray-700 hover:bg-gray-600 text-gray-200 px-4 py-2 rounded-lg text-sm font-medium transition">
+        Limpiar
+      </a>
+    </div>
+  </div>
+</form>
+
+<!-- Table -->
+<div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+  {% if logs %}
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-800 text-left">
+          <th class="px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Fecha</th>
+          <th class="px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Usuario</th>
+          <th class="px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Origen</th>
+          <th class="px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Servidor</th>
+          <th class="px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Comando</th>
+          <th class="px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Resultado</th>
+          <th class="px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Salida</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-800">
+        {% for log in logs %}
+        <tr class="hover:bg-gray-800/50 transition {% if not log.success %}bg-red-950/20{% endif %}">
+
+          <!-- Fecha -->
+          <td class="px-4 py-3 text-gray-300 whitespace-nowrap font-mono text-xs">
+            {{ log.executed_at|date:"Y-m-d" }}<br>
+            <span class="text-gray-500">{{ log.executed_at|date:"H:i:s" }}</span>
+          </td>
+
+          <!-- Usuario -->
+          <td class="px-4 py-3">
+            {% if log.triggered_by %}
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-full bg-brand-700 flex items-center justify-center text-xs font-bold text-white uppercase shrink-0">
+                  {{ log.triggered_by.username|first }}
+                </div>
+                <span class="text-gray-200 font-medium">{{ log.triggered_by.username }}</span>
+              </div>
+            {% else %}
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-full bg-purple-800 flex items-center justify-center shrink-0">
+                  <svg class="w-3 h-3 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                </div>
+                <span class="text-purple-300 text-xs">scheduler</span>
+              </div>
+            {% endif %}
+          </td>
+
+          <!-- Origen -->
+          <td class="px-4 py-3">
+            {% if log.source == 'manual' %}
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-sky-900/50 text-sky-300 border border-sky-700/50">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                </svg>
+                Manual
+              </span>
+            {% else %}
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-purple-900/50 text-purple-300 border border-purple-700/50">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Automático
+              </span>
+            {% endif %}
+          </td>
+
+          <!-- Servidor -->
+          <td class="px-4 py-3">
+            {% if log.server %}
+              <span class="text-gray-200 text-sm">{{ log.server.name }}</span>
+            {% else %}
+              <span class="text-gray-600 text-xs italic">—</span>
+            {% endif %}
+          </td>
+
+          <!-- Comando -->
+          <td class="px-4 py-3 max-w-xs">
+            <code class="block font-mono text-xs text-green-400 bg-gray-950 rounded px-2 py-1 break-all">
+              {{ log.command|truncatechars:120 }}
+            </code>
+          </td>
+
+          <!-- Resultado -->
+          <td class="px-4 py-3">
+            {% if log.success %}
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-900/50 text-green-300 border border-green-700/50">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                OK
+              </span>
+            {% else %}
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-900/50 text-red-300 border border-red-700/50">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+                Falló
+              </span>
+            {% endif %}
+          </td>
+
+          <!-- Salida -->
+          <td class="px-4 py-3 max-w-sm">
+            {% if log.output %}
+              <details class="group">
+                <summary class="cursor-pointer text-xs text-gray-500 hover:text-gray-300 select-none">
+                  Ver salida
+                </summary>
+                <pre class="mt-2 font-mono text-xs text-gray-300 bg-gray-950 rounded p-2 whitespace-pre-wrap break-all max-h-40 overflow-y-auto">{{ log.output }}</pre>
+              </details>
+            {% else %}
+              <span class="text-gray-600 text-xs italic">sin salida</span>
+            {% endif %}
+          </td>
+
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if is_paginated %}
+  <div class="px-4 py-3 border-t border-gray-800 flex items-center justify-between text-xs text-gray-400">
+    <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+    <div class="flex gap-1">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}&source={{ source_filter }}&server={{ server_filter }}&success={{ success_filter }}"
+           class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg transition">← Anterior</a>
+      {% endif %}
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}&source={{ source_filter }}&server={{ server_filter }}&success={{ success_filter }}"
+           class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg transition">Siguiente →</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="text-center py-16">
+    <svg class="w-12 h-12 text-gray-700 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+    </svg>
+    <p class="text-gray-500 text-sm">Sin comandos registrados aún.</p>
+    <p class="text-gray-600 text-xs mt-1">Los comandos de reinicio aparecerán aquí al ejecutarse.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

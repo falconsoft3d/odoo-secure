@@ -6,7 +6,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from django.urls import reverse_lazy
 from django.http import HttpResponseNotAllowed
-from .models import ServerConfig, ServerCheckLog, SecurityEvent, OdooLogSource, OdooLogEntry
+from .models import ServerConfig, ServerCheckLog, SecurityEvent, OdooLogSource, OdooLogEntry, CommandLog
 from .forms import ServerConfigForm, OdooLogSourceForm
 
 
@@ -158,6 +158,15 @@ class ServerManualRestartView(LoginRequiredMixin, View):
             restart_success=success,
             restart_output=output,
             is_manual=True,
+        )
+
+        CommandLog.objects.create(
+            command=server.restart_command,
+            server=server,
+            triggered_by=request.user,
+            source=CommandLog.SOURCE_MANUAL,
+            success=success,
+            output=output,
         )
 
         # Actualizar último estado del servidor
@@ -324,3 +333,41 @@ class OdooLogClearView(LoginRequiredMixin, View):
         deleted, _ = OdooLogEntry.objects.all().delete()
         messages.success(request, f'Se eliminaron {deleted} entradas del log Odoo.')
         return redirect('odoo_logs')
+
+
+# ── Command Log ──────────────────────────────────────────────────────────────
+
+class CommandLogView(LoginRequiredMixin, ListView):
+    model = CommandLog
+    template_name = 'core/commands/list.html'
+    context_object_name = 'logs'
+    paginate_by = 50
+    login_url = '/login/'
+
+    def get_queryset(self):
+        qs = CommandLog.objects.select_related('server', 'triggered_by')
+        source = self.request.GET.get('source', '')
+        server_id = self.request.GET.get('server', '').strip()
+        success = self.request.GET.get('success', '')
+        if source:
+            qs = qs.filter(source=source)
+        if server_id:
+            qs = qs.filter(server_id=server_id)
+        if success in ('1', '0'):
+            qs = qs.filter(success=(success == '1'))
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Historial de comandos'
+        context['active_nav'] = 'commands'
+        context['total'] = CommandLog.objects.count()
+        context['manual_count'] = CommandLog.objects.filter(source=CommandLog.SOURCE_MANUAL).count()
+        context['auto_count'] = CommandLog.objects.filter(source=CommandLog.SOURCE_AUTO).count()
+        context['failed_count'] = CommandLog.objects.filter(success=False).count()
+        context['servers'] = ServerConfig.objects.all()
+        context['source_choices'] = CommandLog.SOURCE_CHOICES
+        context['source_filter'] = self.request.GET.get('source', '')
+        context['server_filter'] = self.request.GET.get('server', '')
+        context['success_filter'] = self.request.GET.get('success', '')
+        return context
