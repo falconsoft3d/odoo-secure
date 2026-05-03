@@ -322,7 +322,9 @@ const chartDefaults = {
 let cpuChart, ramChart;
 
 function buildChart(id, color, data, labels) {
-  return new Chart(document.getElementById(id), {
+  const el = document.getElementById(id);
+  if (!el) return null;
+  return new Chart(el, {
     type: 'line',
     data: {
       labels,
@@ -346,28 +348,53 @@ function setActiveTab(range) {
     btn.classList.add('text-gray-400');
   });
   const active = document.getElementById('tab-' + range);
-  active.classList.add('bg-gray-700', 'text-white');
-  active.classList.remove('text-gray-400');
+  if (active) { active.classList.add('bg-gray-700', 'text-white'); active.classList.remove('text-gray-400'); }
+}
+
+function showMsg(msg) {
+  const el = document.getElementById('charts-empty');
+  el.textContent = msg;
+  el.classList.remove('hidden');
 }
 
 async function loadCharts(range) {
   setActiveTab(range);
-  const res = await fetch(API_URL + '?range=' + range);
-  const d = await res.json();
+  const emptyEl = document.getElementById('charts-empty');
+  emptyEl.textContent = 'Cargando…';
+  emptyEl.classList.remove('hidden');
 
-  document.getElementById('charts-empty').classList.toggle('hidden', d.labels.length > 0);
+  if (cpuChart) { cpuChart.destroy(); cpuChart = null; }
+  if (ramChart)  { ramChart.destroy();  ramChart  = null; }
 
-  if (cpuChart) cpuChart.destroy();
-  if (ramChart) ramChart.destroy();
+  let d;
+  try {
+    const res = await fetch(API_URL + '?range=' + range);
+    if (!res.ok) { showMsg('Error al cargar datos (HTTP ' + res.status + ')'); return; }
+    d = await res.json();
+  } catch(e) {
+    showMsg('Error de red: ' + e.message);
+    return;
+  }
 
-  if (d.labels.length === 0) return;
+  if (!d.labels || d.labels.length === 0) {
+    showMsg('Sin datos aún — el scheduler registra una muestra por minuto. Espera 1-2 minutos y recarga.');
+    return;
+  }
 
-  cpuChart = buildChart('cpuChart', '#38bdf8', d.cpu, d.labels);
-  ramChart = buildChart('ramChart', '#4ade80', d.ram, d.labels);
+  emptyEl.classList.add('hidden');
+  try {
+    cpuChart = buildChart('cpuChart', '#38bdf8', d.cpu, d.labels);
+    ramChart  = buildChart('ramChart',  '#4ade80', d.ram, d.labels);
+  } catch(e) {
+    showMsg('Error al dibujar gráfica: ' + e.message);
+  }
 }
 
-// Load default on page ready
-loadCharts('day');
+if (typeof Chart !== 'undefined') {
+  loadCharts('day');
+} else {
+  document.addEventListener('DOMContentLoaded', () => loadCharts('day'));
+}
 </script>
 
 {% endblock %}
