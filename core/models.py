@@ -279,3 +279,19 @@ class SchedulerLog(models.Model):
     def job_label(self):
         return dict(self.JOB_CHOICES).get(self.job_id, self.job_id)
 
+
+# ── System performance snapshots ──────────────────────────────────────────
+
+class SystemMetric(models.Model):
+    recorded_at = models.DateTimeField(db_index=True, verbose_name='Fecha')
+    cpu_percent = models.FloatField(verbose_name='CPU %')
+    ram_percent = models.FloatField(verbose_name='RAM %')
+
+    class Meta:
+        ordering = ['-recorded_at']
+        verbose_name = 'Métrica del sistema'
+        verbose_name_plural = 'Métricas del sistema'
+
+    def __str__(self):
+        return f'{self.recorded_at:%Y-%m-%d %H:%M} CPU={self.cpu_percent}% RAM={self.ram_percent}%'
+
