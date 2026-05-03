@@ -29,9 +29,10 @@ services:
     # Share host PID namespace so psutil lists host processes
     pid: host
 
-    # Needed for reading /proc and running docker commands
+    # Needed for reading /proc, running docker commands, and nsenter into host namespaces
     cap_add:
       - SYS_PTRACE
+      - SYS_ADMIN
 
     # Give the container user access to docker socket
     group_add:
