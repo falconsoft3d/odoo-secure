@@ -35,9 +35,10 @@ services:
     # Privileged mode required for nsenter to execute systemctl on host
     privileged: true
 
-    # Give the container user access to docker socket
+    # Give the container user access to docker socket and auth.log (adm group)
     group_add:
       - "${DOCKER_GID:-999}"
+      - "${ADM_GID:-4}"
 
     healthcheck:
       test: ["CMD", "python", "-c",
