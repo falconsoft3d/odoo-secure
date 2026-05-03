@@ -271,4 +271,103 @@
   </table>
 </div>
 
+<!-- ── CHARTS: CPU & RAM histórico ─────────────────────────────────── -->
+<div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 mb-5">
+  <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+    <h2 class="text-sm font-semibold text-white">Uso histórico CPU & RAM</h2>
+    <!-- Range tabs -->
+    <div class="flex gap-1 bg-gray-800 rounded-lg p-1">
+      <button onclick="loadCharts('hour')" id="tab-hour"
+              class="tab-btn px-3 py-1.5 rounded-md text-xs font-medium transition">
+        Última hora
+      </button>
+      <button onclick="loadCharts('day')" id="tab-day"
+              class="tab-btn px-3 py-1.5 rounded-md text-xs font-medium transition">
+        Últimas 24h
+      </button>
+      <button onclick="loadCharts('week')" id="tab-week"
+              class="tab-btn px-3 py-1.5 rounded-md text-xs font-medium transition">
+        Últimos 7 días
+      </button>
+    </div>
+  </div>
+  <div id="charts-empty" class="hidden text-center text-gray-500 text-sm py-8">
+    No hay datos aún. El scheduler recopila una muestra por minuto.
+  </div>
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+    <div>
+      <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">CPU %</p>
+      <canvas id="cpuChart" height="120"></canvas>
+    </div>
+    <div>
+      <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">RAM %</p>
+      <canvas id="ramChart" height="120"></canvas>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+const API_URL = "{% url 'system_metrics' %}";
+const chartDefaults = {
+  responsive: true,
+  animation: false,
+  plugins: { legend: { display: false } },
+  scales: {
+    x: { ticks: { color: '#6b7280', font: { size: 10 } }, grid: { color: '#1f2937' } },
+    y: { min: 0, max: 100, ticks: { color: '#6b7280', font: { size: 10 }, callback: v => v + '%' }, grid: { color: '#1f2937' } },
+  },
+};
+
+let cpuChart, ramChart;
+
+function buildChart(id, color, data, labels) {
+  return new Chart(document.getElementById(id), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        borderColor: color,
+        backgroundColor: color + '22',
+        borderWidth: 2,
+        pointRadius: labels.length > 30 ? 0 : 3,
+        tension: 0.3,
+        fill: true,
+      }],
+    },
+    options: chartDefaults,
+  });
+}
+
+function setActiveTab(range) {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.remove('bg-gray-700', 'text-white');
+    btn.classList.add('text-gray-400');
+  });
+  const active = document.getElementById('tab-' + range);
+  active.classList.add('bg-gray-700', 'text-white');
+  active.classList.remove('text-gray-400');
+}
+
+async function loadCharts(range) {
+  setActiveTab(range);
+  const res = await fetch(API_URL + '?range=' + range);
+  const d = await res.json();
+
+  document.getElementById('charts-empty').classList.toggle('hidden', d.labels.length > 0);
+
+  if (cpuChart) cpuChart.destroy();
+  if (ramChart) ramChart.destroy();
+
+  if (d.labels.length === 0) return;
+
+  cpuChart = buildChart('cpuChart', '#38bdf8', d.cpu, d.labels);
+  ramChart = buildChart('ramChart', '#4ade80', d.ram, d.labels);
+}
+
+// Load default on page ready
+loadCharts('day');
+</script>
+
 {% endblock %}

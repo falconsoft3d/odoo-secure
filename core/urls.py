@@ -18,6 +18,7 @@ urlpatterns = [
     path('security/', views.SecurityLogView.as_view(), name='security'),
     # Sistema
     path('system/', views.SystemStatsView.as_view(), name='system'),
+    path('system/metrics/', views.MetricsChartView.as_view(), name='system_metrics'),
     # Logs Odoo
     path('odoo-logs/', views.OdooLogListView.as_view(), name='odoo_logs'),
     path('odoo-logs/sources/', views.OdooLogSourceListView.as_view(), name='odoo_log_sources'),

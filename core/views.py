@@ -5,8 +5,8 @@ from django.views.generic import TemplateView, ListView, CreateView, UpdateView,
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from django.urls import reverse_lazy
-from django.http import HttpResponseNotAllowed
-from .models import ServerConfig, ServerCheckLog, SecurityEvent, OdooLogSource, OdooLogEntry, CommandLog, SchedulerLog
+from django.http import HttpResponseNotAllowed, JsonResponse
+from .models import ServerConfig, ServerCheckLog, SecurityEvent, OdooLogSource, OdooLogEntry, CommandLog, SchedulerLog, SystemMetric
 from .forms import ServerConfigForm, OdooLogSourceForm
 
 
@@ -247,6 +247,60 @@ class SystemStatsView(LoginRequiredMixin, TemplateView):
         context['active_nav'] = 'system'
         context['stats'] = collect_all()
         return context
+
+
+class MetricsChartView(LoginRequiredMixin, View):
+    """Returns JSON aggregated CPU/RAM data for Chart.js."""
+    login_url = '/login/'
+
+    def get(self, request):
+        from django.utils import timezone
+        from django.db.models.functions import TruncMinute, TruncHour, TruncDay
+        from django.db.models import Avg
+        import datetime
+
+        range_param = request.GET.get('range', 'day')
+        now = timezone.now()
+
+        if range_param == 'hour':
+            since = now - datetime.timedelta(hours=1)
+            qs = (
+                SystemMetric.objects.filter(recorded_at__gte=since)
+                .annotate(bucket=TruncMinute('recorded_at'))
+                .values('bucket')
+                .annotate(cpu=Avg('cpu_percent'), ram=Avg('ram_percent'))
+                .order_by('bucket')
+            )
+            fmt = '%H:%M'
+        elif range_param == 'week':
+            since = now - datetime.timedelta(days=7)
+            qs = (
+                SystemMetric.objects.filter(recorded_at__gte=since)
+                .annotate(bucket=TruncDay('recorded_at'))
+                .values('bucket')
+                .annotate(cpu=Avg('cpu_percent'), ram=Avg('ram_percent'))
+                .order_by('bucket')
+            )
+            fmt = '%d/%m'
+        else:  # day
+            since = now - datetime.timedelta(hours=24)
+            qs = (
+                SystemMetric.objects.filter(recorded_at__gte=since)
+                .annotate(bucket=TruncHour('recorded_at'))
+                .values('bucket')
+                .annotate(cpu=Avg('cpu_percent'), ram=Avg('ram_percent'))
+                .order_by('bucket')
+            )
+            fmt = '%H:00'
+
+        labels, cpu_data, ram_data = [], [], []
+        for row in qs:
+            local_dt = timezone.localtime(row['bucket'])
+            labels.append(local_dt.strftime(fmt))
+            cpu_data.append(round(row['cpu'], 1))
+            ram_data.append(round(row['ram'], 1))
+
+        return JsonResponse({'labels': labels, 'cpu': cpu_data, 'ram': ram_data})
 
 
 # ── Odoo Log views ────────────────────────────────────────────────────────

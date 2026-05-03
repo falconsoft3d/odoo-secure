@@ -157,3 +157,21 @@ def collect_all():
         'processes': get_top_processes(),
         'system': get_system_info(),
     }
+
+
+def record_metrics():
+    """Records a CPU/RAM snapshot to the database (called by the scheduler)."""
+    import psutil
+    from django.utils import timezone
+    from core.models import SystemMetric
+
+    cpu = psutil.cpu_percent(interval=0.3)
+    ram = psutil.virtual_memory().percent
+    SystemMetric.objects.create(
+        recorded_at=timezone.now(),
+        cpu_percent=cpu,
+        ram_percent=ram,
+    )
+    # Keep only last 7 days to avoid unbounded growth
+    cutoff = timezone.now() - __import__('datetime').timedelta(days=7)
+    SystemMetric.objects.filter(recorded_at__lt=cutoff).delete()

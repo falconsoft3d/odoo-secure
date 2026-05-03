@@ -59,7 +59,16 @@ def start():
 
     from core.log_parser import read_security_logs
     from core.odoo_log_parser import read_odoo_logs
+    from core.system_stats import record_metrics
 
+    scheduler.add_job(
+        _tracked('record_system_metrics', record_metrics),
+        trigger=IntervalTrigger(minutes=1),
+        id='record_system_metrics',
+        name='Registro de métricas CPU/RAM',
+        replace_existing=True,
+        misfire_grace_time=30,
+    )
     scheduler.add_job(
         _tracked('read_security_logs', read_security_logs),
         trigger=IntervalTrigger(minutes=1),
@@ -77,7 +86,7 @@ def start():
         misfire_grace_time=30,
     )
     scheduler.start()
-    logger.info('Scheduler iniciado — logs de seguridad y logs Odoo cada 1 minuto.')
+    logger.info('Scheduler iniciado — métricas, logs de seguridad y logs Odoo cada 1 minuto.')
 
 
 def shutdown():
