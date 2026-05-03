@@ -22,9 +22,8 @@ services:
       # ── Docker socket (for "docker restart <container>" commands) ────────
       - /var/run/docker.sock:/var/run/docker.sock
 
-      # ── Host systemd/dbus access (for service restart commands) ──────────
-      - /run/systemd:/run/systemd
-      - /run/dbus:/run/dbus
+      # ── Odoo restart trigger pipe (see odoo-restart-listener.service) ────
+      - /run/odoo-restart.pipe:/run/odoo-restart.pipe
 
       # ── Host /proc and /sys for real host metrics via psutil ─────────────
       - /proc:/host/proc:ro
