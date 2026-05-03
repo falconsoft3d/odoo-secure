@@ -22,10 +22,9 @@ services:
       # ── Docker socket (for "docker restart <container>" commands) ────────
       - /var/run/docker.sock:/var/run/docker.sock
 
-      # ── Host systemd access (for systemctl restart commands) ─────────────
-      - /run/systemd/system:/run/systemd/system
-      - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket
-      - /var/run/dbus:/var/run/dbus
+      # ── Host systemd/dbus access (for service restart commands) ──────────
+      - /run/systemd:/run/systemd
+      - /run/dbus:/run/dbus
 
       # ── Host /proc and /sys for real host metrics via psutil ─────────────
       - /proc:/host/proc:ro
