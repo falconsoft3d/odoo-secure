@@ -207,7 +207,9 @@ class SecurityLogView(LoginRequiredMixin, ListView):
         return qs
 
     def get_context_data(self, **kwargs):
+        from django.utils.timezone import now  # noqa: PLC0415
         context = super().get_context_data(**kwargs)
+        today = now().date()
         context['title'] = 'Accesos y seguridad'
         context['total'] = SecurityEvent.objects.count()
         context['threats'] = SecurityEvent.objects.filter(
@@ -215,6 +217,17 @@ class SecurityLogView(LoginRequiredMixin, ListView):
         ).count()
         context['successes'] = SecurityEvent.objects.filter(
             event_type='ssh_success'
+        ).count()
+        # KPIs de hoy
+        context['today_total'] = SecurityEvent.objects.filter(timestamp__date=today).count()
+        context['today_threats'] = SecurityEvent.objects.filter(
+            timestamp__date=today, event_type__in=['ssh_fail', 'ssh_invalid']
+        ).count()
+        context['today_successes'] = SecurityEvent.objects.filter(
+            timestamp__date=today, event_type='ssh_success'
+        ).count()
+        context['today_sudo'] = SecurityEvent.objects.filter(
+            timestamp__date=today, event_type='sudo'
         ).count()
         context['type_filter'] = self.request.GET.get('type', '')
         context['ip_filter'] = self.request.GET.get('ip', '')

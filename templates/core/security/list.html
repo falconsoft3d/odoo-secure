@@ -7,10 +7,33 @@
 {% block content %}
 {% with active_nav='security' %}{% endwith %}
 
-<!-- Stats row -->
+<!-- KPIs de hoy -->
+<div class="bg-gray-900 border border-brand-700/40 rounded-xl p-4 mb-4">
+  <p class="text-xs text-brand-400 uppercase tracking-wide font-medium mb-3">Hoy</p>
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+    <div class="text-center">
+      <p class="text-2xl font-bold text-white">{{ today_total }}</p>
+      <p class="text-xs text-gray-500 mt-1">Eventos</p>
+    </div>
+    <div class="text-center">
+      <p class="text-2xl font-bold text-red-400">{{ today_threats }}</p>
+      <p class="text-xs text-gray-500 mt-1">Amenazas</p>
+    </div>
+    <div class="text-center">
+      <p class="text-2xl font-bold text-green-400">{{ today_successes }}</p>
+      <p class="text-xs text-gray-500 mt-1">Accesos exitosos</p>
+    </div>
+    <div class="text-center">
+      <p class="text-2xl font-bold text-yellow-400">{{ today_sudo }}</p>
+      <p class="text-xs text-gray-500 mt-1">Comandos sudo</p>
+    </div>
+  </div>
+</div>
+
+<!-- Stats row (histórico) -->
 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
   <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
-    <p class="text-xs text-gray-500 mb-1">Total eventos</p>
+    <p class="text-xs text-gray-500 mb-1">Total histórico</p>
     <p class="text-2xl font-bold text-white">{{ total }}</p>
   </div>
   <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
