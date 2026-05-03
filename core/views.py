@@ -421,7 +421,6 @@ class RunJobView(LoginRequiredMixin, View):
     login_url = '/login/'
 
     JOBS = {
-        'check_all_servers': 'core.monitor.check_all_servers',
         'read_security_logs': 'core.log_parser.read_security_logs',
         'read_odoo_logs': 'core.odoo_log_parser.read_odoo_logs',
     }

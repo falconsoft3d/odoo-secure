@@ -246,11 +246,9 @@ class CommandLog(models.Model):
 # ── Scheduler execution history ───────────────────────────────────────────
 
 class SchedulerLog(models.Model):
-    JOB_SERVERS = 'check_all_servers'
     JOB_SECURITY = 'read_security_logs'
     JOB_ODOO = 'read_odoo_logs'
     JOB_CHOICES = [
-        (JOB_SERVERS, 'Chequeo de servidores Odoo'),
         (JOB_SECURITY, 'Lectura de logs de seguridad'),
         (JOB_ODOO, 'Lectura de logs de aplicación Odoo'),
     ]

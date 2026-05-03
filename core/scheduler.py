@@ -57,18 +57,9 @@ def start():
     if scheduler.running:
         return
 
-    from core.monitor import check_all_servers
     from core.log_parser import read_security_logs
     from core.odoo_log_parser import read_odoo_logs
 
-    scheduler.add_job(
-        _tracked('check_all_servers', check_all_servers),
-        trigger=IntervalTrigger(minutes=1),
-        id='check_all_servers',
-        name='Chequeo de servidores Odoo',
-        replace_existing=True,
-        misfire_grace_time=30,
-    )
     scheduler.add_job(
         _tracked('read_security_logs', read_security_logs),
         trigger=IntervalTrigger(minutes=1),
@@ -86,7 +77,7 @@ def start():
         misfire_grace_time=30,
     )
     scheduler.start()
-    logger.info('Scheduler iniciado — chequeo, logs de seguridad y logs Odoo cada 1 minuto.')
+    logger.info('Scheduler iniciado — logs de seguridad y logs Odoo cada 1 minuto.')
 
 
 def shutdown():
