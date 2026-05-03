@@ -168,9 +168,10 @@
         </td>
 
         <!-- IP -->
-        <td class="px-5 py-3">
+        <td class="px-5 py-3" data-ip="{{ ev.source_ip }}">
           {% if ev.source_ip %}
           <code class="text-xs font-mono text-brand-300">{{ ev.source_ip }}</code>
+          <span class="ip-geo block text-xs text-gray-400 mt-0.5"></span>
           {% else %}
           <span class="text-gray-600 text-xs">–</span>
           {% endif %}
@@ -229,5 +230,43 @@
   {% endif %}
 </div>
 {% endif %}
+
+<script>
+(function () {
+  function toFlag(code) {
+    return [...code.toUpperCase()].map(c =>
+      String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65)
+    ).join('');
+  }
+  function getCsrf() {
+    const m = document.cookie.match(/(?:^|; )csrftoken=([^;]+)/);
+    return m ? m[1] : '';
+  }
+
+  const cells = [...document.querySelectorAll('td[data-ip]')];
+  const ips = [...new Set(cells.map(c => c.dataset.ip).filter(Boolean))];
+  if (!ips.length) return;
+
+  fetch('/api/geoip/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+    body: JSON.stringify(ips),
+  })
+    .then(r => r.json())
+    .then(data => {
+      const map = {};
+      for (const item of data) {
+        if (item.status === 'success') map[item.query] = item;
+      }
+      cells.forEach(td => {
+        const info = map[td.dataset.ip];
+        if (!info) return;
+        const span = td.querySelector('.ip-geo');
+        if (span) span.textContent = toFlag(info.countryCode) + ' ' + info.country;
+      });
+    })
+    .catch(() => {});
+})();
+</script>
 
 {% endblock %}

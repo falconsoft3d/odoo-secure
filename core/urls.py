@@ -29,4 +29,6 @@ urlpatterns = [
     # Historial de cron jobs
     path('scheduler/', views.SchedulerLogView.as_view(), name='scheduler_log'),
     path('scheduler/run/<str:job_id>/', views.RunJobView.as_view(), name='run_job'),
+    # GeoIP proxy
+    path('api/geoip/', views.GeoIPView.as_view(), name='geoip'),
 ]

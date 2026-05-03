@@ -277,6 +277,10 @@
     <h2 class="text-sm font-semibold text-white">Uso histórico CPU & RAM</h2>
     <!-- Range tabs -->
     <div class="flex gap-1 bg-gray-800 rounded-lg p-1">
+      <button onclick="loadCharts('half_hour')" id="tab-half_hour"
+              class="tab-btn px-3 py-1.5 rounded-md text-xs font-medium transition">
+        Últimos 30 min
+      </button>
       <button onclick="loadCharts('hour')" id="tab-hour"
               class="tab-btn px-3 py-1.5 rounded-md text-xs font-medium transition">
         Última hora

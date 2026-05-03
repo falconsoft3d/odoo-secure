@@ -262,7 +262,17 @@ class MetricsChartView(LoginRequiredMixin, View):
         range_param = request.GET.get('range', 'day')
         now = timezone.now()
 
-        if range_param == 'hour':
+        if range_param == 'half_hour':
+            since = now - datetime.timedelta(minutes=30)
+            qs = (
+                SystemMetric.objects.filter(recorded_at__gte=since)
+                .annotate(bucket=TruncMinute('recorded_at'))
+                .values('bucket')
+                .annotate(cpu=Avg('cpu_percent'), ram=Avg('ram_percent'))
+                .order_by('bucket')
+            )
+            fmt = '%H:%M'
+        elif range_param == 'hour':
             since = now - datetime.timedelta(hours=1)
             qs = (
                 SystemMetric.objects.filter(recorded_at__gte=since)
@@ -301,6 +311,53 @@ class MetricsChartView(LoginRequiredMixin, View):
             ram_data.append(round(row['ram'], 1))
 
         return JsonResponse({'labels': labels, 'cpu': cpu_data, 'ram': ram_data})
+
+
+# ── GeoIP proxy ───────────────────────────────────────────────────────────
+
+class GeoIPView(LoginRequiredMixin, View):
+    """Proxy batch geo-IP a ip-api.com para evitar CORS y mixed-content."""
+    login_url = '/login/'
+
+    def post(self, request):
+        import json as _json
+        import ipaddress as _ipaddress
+        import urllib.request as _ur
+
+        try:
+            body = _json.loads(request.body)
+        except Exception:
+            return JsonResponse([], safe=False)
+
+        if not isinstance(body, list):
+            return JsonResponse([], safe=False)
+
+        valid = []
+        for item in body[:100]:
+            try:
+                _ipaddress.ip_address(str(item))
+                valid.append(str(item))
+            except ValueError:
+                pass
+
+        if not valid:
+            return JsonResponse([], safe=False)
+
+        payload = _json.dumps([
+            {'query': ip, 'fields': 'query,country,countryCode,status'}
+            for ip in valid
+        ]).encode()
+        try:
+            req = _ur.Request(
+                'http://ip-api.com/batch',
+                data=payload,
+                headers={'Content-Type': 'application/json'},
+            )
+            with _ur.urlopen(req, timeout=5) as resp:
+                data = _json.loads(resp.read())
+            return JsonResponse(data, safe=False)
+        except Exception:
+            return JsonResponse([], safe=False)
 
 
 # ── Odoo Log views ────────────────────────────────────────────────────────
