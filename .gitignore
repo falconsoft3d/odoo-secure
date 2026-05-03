@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Django
+*.sqlite3
+*.log
+local_settings.py
+staticfiles/
+mediafiles/
+media/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# IDE / editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Coverage / testing
+.coverage
+htmlcov/
+.pytest_cache/
+coverage.xml
+
+# Migrations (optional: comment out if you want to track them)
+# core/migrations/
+
+# Secrets / keys
+*.pem
+*.key
+*.cert
+secrets.json
+data/*.sqlite3
+data/

@@ -1,0 +1,188 @@
+{% extends 'core/layout.html' %}
+
+{% block title %}{{ title }} – Odoo Secure{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_subtitle %}Logs de autenticación SSH y sudo leídos desde el sistema host{% endblock %}
+
+{% block content %}
+{% with active_nav='security' %}{% endwith %}
+
+<!-- Stats row -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+    <p class="text-xs text-gray-500 mb-1">Total eventos</p>
+    <p class="text-2xl font-bold text-white">{{ total }}</p>
+  </div>
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+    <p class="text-xs text-gray-500 mb-1">Amenazas (fallos + inv.)</p>
+    <p class="text-2xl font-bold text-red-400">{{ threats }}</p>
+  </div>
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+    <p class="text-xs text-gray-500 mb-1">Accesos exitosos</p>
+    <p class="text-2xl font-bold text-green-400">{{ successes }}</p>
+  </div>
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+    <p class="text-xs text-gray-500 mb-1">En esta página</p>
+    <p class="text-2xl font-bold text-gray-300">{{ events|length }}</p>
+  </div>
+</div>
+
+<!-- Filtros -->
+<form method="get" class="bg-gray-900 border border-gray-800 rounded-xl p-4 mb-5 flex flex-wrap gap-3 items-end">
+  <div class="flex flex-col gap-1 flex-1 min-w-36">
+    <label class="text-xs text-gray-500">Tipo</label>
+    <select name="type"
+            class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white
+                   focus:outline-none focus:ring-2 focus:ring-brand-500">
+      <option value="">Todos</option>
+      {% for val, label in event_type_choices %}
+      <option value="{{ val }}" {% if type_filter == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="flex flex-col gap-1 flex-1 min-w-36">
+    <label class="text-xs text-gray-500">IP origen</label>
+    <input type="text" name="ip" value="{{ ip_filter }}" placeholder="1.2.3.4"
+           class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white font-mono
+                  placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500">
+  </div>
+  <div class="flex flex-col gap-1 flex-1 min-w-36">
+    <label class="text-xs text-gray-500">Usuario</label>
+    <input type="text" name="user" value="{{ user_filter }}" placeholder="root"
+           class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white font-mono
+                  placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500">
+  </div>
+  <div class="flex gap-2">
+    <button type="submit"
+            class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition">
+      Filtrar
+    </button>
+    {% if type_filter or ip_filter or user_filter %}
+    <a href="{% url 'security' %}"
+       class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white text-sm font-medium rounded-lg border border-gray-700 transition">
+      Limpiar
+    </a>
+    {% endif %}
+  </div>
+</form>
+
+<!-- Tabla -->
+{% if events %}
+<div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="border-b border-gray-800 text-left">
+        <th class="px-5 py-3.5 text-xs font-semibold text-gray-400 uppercase tracking-wider">Fecha y hora</th>
+        <th class="px-5 py-3.5 text-xs font-semibold text-gray-400 uppercase tracking-wider text-center">Tipo</th>
+        <th class="px-5 py-3.5 text-xs font-semibold text-gray-400 uppercase tracking-wider">Usuario</th>
+        <th class="px-5 py-3.5 text-xs font-semibold text-gray-400 uppercase tracking-wider">IP origen</th>
+        <th class="px-5 py-3.5 text-xs font-semibold text-gray-400 uppercase tracking-wider">Hostname</th>
+        <th class="px-5 py-3.5 text-xs font-semibold text-gray-400 uppercase tracking-wider">Línea</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-800">
+      {% for ev in events %}
+      <tr class="hover:bg-gray-800/40 transition
+                 {% if ev.event_type == 'ssh_fail' or ev.event_type == 'ssh_invalid' %}bg-red-950/20{% elif ev.event_type == 'ssh_success' %}bg-green-950/10{% endif %}">
+
+        <!-- Fecha -->
+        <td class="px-5 py-3 text-gray-300 font-mono text-xs whitespace-nowrap">
+          {{ ev.timestamp|date:"d/m/Y H:i:s" }}
+        </td>
+
+        <!-- Tipo badge -->
+        <td class="px-5 py-3 text-center">
+          {% if ev.event_type == 'ssh_fail' %}
+          <span class="inline-flex items-center gap-1 text-xs bg-red-900/40 text-red-400 border border-red-800 px-2 py-0.5 rounded-full whitespace-nowrap">
+            ✗ SSH Fallo
+          </span>
+          {% elif ev.event_type == 'ssh_invalid' %}
+          <span class="inline-flex items-center gap-1 text-xs bg-orange-900/40 text-orange-400 border border-orange-800 px-2 py-0.5 rounded-full whitespace-nowrap">
+            ? Usuario inv.
+          </span>
+          {% elif ev.event_type == 'ssh_success' %}
+          <span class="inline-flex items-center gap-1 text-xs bg-green-900/40 text-green-400 border border-green-800 px-2 py-0.5 rounded-full whitespace-nowrap">
+            ✓ SSH OK
+          </span>
+          {% elif ev.event_type == 'sudo' %}
+          <span class="inline-flex items-center gap-1 text-xs bg-yellow-900/40 text-yellow-400 border border-yellow-800 px-2 py-0.5 rounded-full whitespace-nowrap">
+            ⚡ Sudo
+          </span>
+          {% else %}
+          <span class="text-xs text-gray-600">Otro</span>
+          {% endif %}
+        </td>
+
+        <!-- Usuario -->
+        <td class="px-5 py-3">
+          {% if ev.username %}
+          <code class="text-xs font-mono text-gray-300">{{ ev.username }}</code>
+          {% else %}
+          <span class="text-gray-600 text-xs">–</span>
+          {% endif %}
+        </td>
+
+        <!-- IP -->
+        <td class="px-5 py-3">
+          {% if ev.source_ip %}
+          <code class="text-xs font-mono text-brand-300">{{ ev.source_ip }}</code>
+          {% else %}
+          <span class="text-gray-600 text-xs">–</span>
+          {% endif %}
+        </td>
+
+        <!-- Hostname -->
+        <td class="px-5 py-3 text-xs text-gray-500 font-mono">{{ ev.hostname|default:"–" }}</td>
+
+        <!-- Línea raw -->
+        <td class="px-5 py-3 max-w-xs">
+          <code class="text-xs text-gray-500 font-mono block truncate" title="{{ ev.raw_line }}">
+            {{ ev.raw_line|truncatechars:80 }}
+          </code>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Paginación -->
+{% if is_paginated %}
+<div class="flex items-center justify-between mt-4 text-sm text-gray-500">
+  <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+  <div class="flex gap-2">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}{% if type_filter %}&type={{ type_filter }}{% endif %}{% if ip_filter %}&ip={{ ip_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}"
+       class="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 text-gray-300 transition">
+      ← Anterior
+    </a>
+    {% endif %}
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% if type_filter %}&type={{ type_filter }}{% endif %}{% if ip_filter %}&ip={{ ip_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}"
+       class="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 text-gray-300 transition">
+      Siguiente →
+    </a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{% else %}
+<div class="bg-gray-900 border border-gray-800 rounded-2xl flex flex-col items-center justify-center py-16 text-center">
+  <svg class="w-10 h-10 text-gray-700 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+          d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+  </svg>
+  {% if type_filter or ip_filter or user_filter %}
+  <p class="text-gray-500 text-sm">Sin resultados con ese filtro.</p>
+  {% else %}
+  <p class="text-gray-500 text-sm">Sin eventos registrados aún.</p>
+  <p class="text-xs text-gray-600 mt-1">
+    El lector corre cada minuto. Requiere acceso a
+    <code class="font-mono">/var/log/auth.log</code> o <code class="font-mono">/var/log/secure</code>.
+  </p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

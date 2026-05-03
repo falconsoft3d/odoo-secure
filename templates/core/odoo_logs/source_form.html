@@ -1,0 +1,57 @@
+{% extends 'core/layout.html' %}
+
+{% block title %}{{ action }} fuente – Odoo Secure{% endblock %}
+{% block page_title %}{{ action }} fuente de log Odoo{% endblock %}
+{% block page_subtitle %}Define la ruta al archivo de log en el sistema host{% endblock %}
+
+{% block content %}
+<div class="max-w-lg">
+  <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+    <form method="post" novalidate>
+      {% csrf_token %}
+      <div class="space-y-5">
+
+        <!-- Nombre -->
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1.5">{{ form.name.label }}</label>
+          {{ form.name }}
+          {% if form.name.errors %}
+          <p class="text-xs text-red-400 mt-1">{{ form.name.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Ruta -->
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1.5">{{ form.log_path.label }}</label>
+          {{ form.log_path }}
+          <p class="text-xs text-gray-600 mt-1">
+            Ruta absoluta en el sistema host (no dentro de Docker).<br>
+            Por defecto: <code class="font-mono">/var/log/odoo/odoo-server.log</code>
+          </p>
+          {% if form.log_path.errors %}
+          <p class="text-xs text-red-400 mt-1">{{ form.log_path.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Activo -->
+        <div class="flex items-center gap-3">
+          {{ form.is_active }}
+          <label class="text-sm text-gray-300">{{ form.is_active.label }}</label>
+        </div>
+
+      </div>
+
+      <div class="flex gap-3 mt-6">
+        <button type="submit"
+                class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition">
+          Guardar
+        </button>
+        <a href="{% url 'odoo_log_sources' %}"
+           class="bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm px-5 py-2.5 rounded-lg border border-gray-700 transition">
+          Cancelar
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

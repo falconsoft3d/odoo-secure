@@ -1,0 +1,49 @@
+services:
+  web:
+    build: .
+    image: odoo-secure:latest
+    container_name: odoo_secure_web
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8000:8000"
+
+    volumes:
+      # ── Persistent data ──────────────────────────────────────────────────
+      # SQLite database and any uploaded files
+      - odoo_secure_data:/app/data
+
+      # ── Host log access (read-only) ──────────────────────────────────────
+      # System auth logs (SSH events)
+      - /var/log:/var/log:ro
+      # Odoo application logs — adjust path if different
+      # - /opt/odoo/logs:/var/log/odoo:ro   # uncomment if logs are elsewhere
+
+      # ── Docker socket (for "docker restart <container>" commands) ────────
+      - /var/run/docker.sock:/var/run/docker.sock
+
+      # ── Host /proc and /sys for real host metrics via psutil ─────────────
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+
+    # Share host PID namespace so psutil lists host processes
+    pid: host
+
+    # Needed for reading /proc and running docker commands
+    cap_add:
+      - SYS_PTRACE
+
+    # Give the container user access to docker socket
+    group_add:
+      - "${DOCKER_GID:-999}"
+
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/login/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  odoo_secure_data:

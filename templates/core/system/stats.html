@@ -1,0 +1,274 @@
+{% extends 'core/layout.html' %}
+
+{% block title %}{{ title }} – Odoo Secure{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_subtitle %}
+  {{ stats.system.hostname }} · {{ stats.system.os }} · {{ stats.system.arch }} ·
+  Uptime: {{ stats.uptime.uptime_str }}
+{% endblock %}
+
+{% block header_actions %}
+<button onclick="location.reload()"
+        class="inline-flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white
+               text-sm font-medium px-4 py-2 rounded-lg border border-gray-700 transition">
+  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+  </svg>
+  Actualizar
+</button>
+{% endblock %}
+
+{% block content %}
+
+{# ── Macro: progress bar ──────────────────────────────────────────────── #}
+{% with pct=stats.cpu.percent %}{% endwith %}
+
+<!-- ── ROW 1: CPU · RAM · Swap · Uptime ─────────────────────────────── -->
+<div class="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
+
+  <!-- CPU -->
+  <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">CPU</span>
+      <span class="text-xs text-gray-500">{{ stats.cpu.cores_physical }}C / {{ stats.cpu.cores_logical }}T</span>
+    </div>
+    <p class="text-4xl font-bold {% if stats.cpu.percent >= 85 %}text-red-400{% elif stats.cpu.percent >= 60 %}text-yellow-400{% else %}text-white{% endif %}">
+      {{ stats.cpu.percent }}<span class="text-xl text-gray-500">%</span>
+    </p>
+    <div class="mt-3 h-2 bg-gray-800 rounded-full overflow-hidden">
+      <div class="h-full rounded-full transition-all
+                  {% if stats.cpu.percent >= 85 %}bg-red-500{% elif stats.cpu.percent >= 60 %}bg-yellow-500{% else %}bg-brand-500{% endif %}"
+           style="width: {{ stats.cpu.percent }}%"></div>
+    </div>
+    {% if stats.cpu.freq_current %}
+    <p class="text-xs text-gray-600 mt-2">{{ stats.cpu.freq_current|floatformat:0 }} MHz
+      {% if stats.cpu.freq_max %}/ {{ stats.cpu.freq_max|floatformat:0 }} MHz max{% endif %}
+    </p>
+    {% endif %}
+  </div>
+
+  <!-- RAM -->
+  <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">RAM</span>
+      <span class="text-xs text-gray-500">{{ stats.memory.used_gb }} / {{ stats.memory.total_gb }} GB</span>
+    </div>
+    <p class="text-4xl font-bold {% if stats.memory.percent >= 85 %}text-red-400{% elif stats.memory.percent >= 70 %}text-yellow-400{% else %}text-white{% endif %}">
+      {{ stats.memory.percent }}<span class="text-xl text-gray-500">%</span>
+    </p>
+    <div class="mt-3 h-2 bg-gray-800 rounded-full overflow-hidden">
+      <div class="h-full rounded-full transition-all
+                  {% if stats.memory.percent >= 85 %}bg-red-500{% elif stats.memory.percent >= 70 %}bg-yellow-500{% else %}bg-green-500{% endif %}"
+           style="width: {{ stats.memory.percent }}%"></div>
+    </div>
+    <p class="text-xs text-gray-600 mt-2">{{ stats.memory.available_gb }} GB disponibles</p>
+  </div>
+
+  <!-- Swap -->
+  <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Swap</span>
+      <span class="text-xs text-gray-500">{{ stats.memory.swap_used_gb }} / {{ stats.memory.swap_total_gb }} GB</span>
+    </div>
+    <p class="text-4xl font-bold {% if stats.memory.swap_percent >= 80 %}text-red-400{% elif stats.memory.swap_percent >= 50 %}text-yellow-400{% else %}text-white{% endif %}">
+      {{ stats.memory.swap_percent }}<span class="text-xl text-gray-500">%</span>
+    </p>
+    <div class="mt-3 h-2 bg-gray-800 rounded-full overflow-hidden">
+      <div class="h-full rounded-full transition-all
+                  {% if stats.memory.swap_percent >= 80 %}bg-red-500{% elif stats.memory.swap_percent >= 50 %}bg-yellow-500{% else %}bg-purple-500{% endif %}"
+           style="width: {{ stats.memory.swap_percent }}%"></div>
+    </div>
+    <p class="text-xs text-gray-600 mt-2">Memoria de intercambio</p>
+  </div>
+
+  <!-- Load avg + Uptime -->
+  <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Carga del sistema</span>
+    </div>
+    {% if stats.load.load1 is not None %}
+    <div class="flex items-end gap-3">
+      <div class="text-center">
+        <p class="text-2xl font-bold text-white">{{ stats.load.load1 }}</p>
+        <p class="text-xs text-gray-600">1 min</p>
+      </div>
+      <div class="text-center">
+        <p class="text-2xl font-bold text-gray-300">{{ stats.load.load5 }}</p>
+        <p class="text-xs text-gray-600">5 min</p>
+      </div>
+      <div class="text-center">
+        <p class="text-2xl font-bold text-gray-400">{{ stats.load.load15 }}</p>
+        <p class="text-xs text-gray-600">15 min</p>
+      </div>
+    </div>
+    {% else %}
+    <p class="text-gray-500 text-sm">No disponible en este SO</p>
+    {% endif %}
+    <div class="mt-3 pt-3 border-t border-gray-800 text-xs text-gray-500">
+      <p>Arrancó: {{ stats.uptime.boot_time }}</p>
+      <p class="text-gray-400 font-medium">{{ stats.uptime.uptime_str }} en línea</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── ROW 2: Per-core CPU ──────────────────────────────────────────── -->
+<div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 mb-5">
+  <h2 class="text-sm font-semibold text-white mb-4">CPU por núcleo</h2>
+  <div class="grid grid-cols-4 sm:grid-cols-8 gap-3">
+    {% for pct in stats.cpu.per_core %}
+    <div class="flex flex-col items-center gap-1.5">
+      <div class="w-full h-20 bg-gray-800 rounded-lg relative overflow-hidden flex items-end">
+        <div class="w-full rounded-lg transition-all
+                    {% if pct >= 85 %}bg-red-500{% elif pct >= 60 %}bg-yellow-500{% else %}bg-brand-500{% endif %}"
+             style="height: {{ pct }}%"></div>
+      </div>
+      <span class="text-xs font-mono {% if pct >= 85 %}text-red-400{% elif pct >= 60 %}text-yellow-400{% else %}text-gray-400{% endif %}">
+        {{ pct }}%
+      </span>
+      <span class="text-xs text-gray-600">c{{ forloop.counter }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ── ROW 3: Discos ────────────────────────────────────────────────── -->
+{% if stats.disks %}
+<div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 mb-5">
+  <h2 class="text-sm font-semibold text-white mb-4">Almacenamiento</h2>
+  <div class="space-y-4">
+    {% for disk in stats.disks %}
+    <div>
+      <div class="flex items-center justify-between mb-1.5 text-sm">
+        <div class="flex items-center gap-2">
+          <code class="font-mono text-xs text-brand-300">{{ disk.mountpoint }}</code>
+          <span class="text-xs text-gray-600">({{ disk.device }} · {{ disk.fstype }})</span>
+        </div>
+        <div class="flex items-center gap-4 text-xs text-gray-400">
+          <span>{{ disk.used_gb }} GB usados</span>
+          <span class="text-gray-600">/ {{ disk.total_gb }} GB</span>
+          <span class="font-semibold {% if disk.percent >= 90 %}text-red-400{% elif disk.percent >= 75 %}text-yellow-400{% else %}text-white{% endif %}">
+            {{ disk.percent }}%
+          </span>
+        </div>
+      </div>
+      <div class="h-2.5 bg-gray-800 rounded-full overflow-hidden">
+        <div class="h-full rounded-full
+                    {% if disk.percent >= 90 %}bg-red-500{% elif disk.percent >= 75 %}bg-yellow-500{% else %}bg-brand-500{% endif %}"
+             style="width: {{ disk.percent }}%"></div>
+      </div>
+      <p class="text-xs text-gray-600 mt-1">{{ disk.free_gb }} GB libres</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- ── ROW 4: Red ───────────────────────────────────────────────────── -->
+{% if stats.network %}
+<div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden mb-5">
+  <div class="px-5 py-4 border-b border-gray-800">
+    <h2 class="text-sm font-semibold text-white">Interfaces de red</h2>
+  </div>
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="border-b border-gray-800 text-left">
+        <th class="px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Interfaz</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">IPv4</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider text-right">↑ Enviado</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider text-right">↓ Recibido</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider text-center">Errores E/S</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider text-right">Velocidad</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-800">
+      {% for iface in stats.network %}
+      <tr class="hover:bg-gray-800/40 transition">
+        <td class="px-5 py-3">
+          <code class="text-xs font-mono text-brand-300 font-semibold">{{ iface.name }}</code>
+        </td>
+        <td class="px-5 py-3">
+          <code class="text-xs font-mono text-gray-300">{{ iface.ipv4 }}</code>
+        </td>
+        <td class="px-5 py-3 text-right">
+          <span class="text-xs font-mono text-green-400">↑ {{ iface.sent_mb }} MB</span>
+        </td>
+        <td class="px-5 py-3 text-right">
+          <span class="text-xs font-mono text-blue-400">↓ {{ iface.recv_mb }} MB</span>
+        </td>
+        <td class="px-5 py-3 text-center">
+          {% if iface.errin or iface.errout %}
+          <span class="text-xs text-red-400">{{ iface.errin }}/{{ iface.errout }}</span>
+          {% else %}
+          <span class="text-xs text-gray-600">0/0</span>
+          {% endif %}
+        </td>
+        <td class="px-5 py-3 text-right text-xs text-gray-500 font-mono">
+          {% if iface.speed_mbps %}{{ iface.speed_mbps }} Mbps{% else %}–{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- ── ROW 5: Top procesos ──────────────────────────────────────────── -->
+<div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+  <div class="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
+    <h2 class="text-sm font-semibold text-white">Top procesos por CPU</h2>
+    <span class="text-xs text-gray-500">Top 10 al momento de cargar la página</span>
+  </div>
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="border-b border-gray-800 text-left">
+        <th class="px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">PID</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Proceso</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Usuario</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider text-center">CPU %</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider text-center">Mem %</th>
+        <th class="px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider text-center">Estado</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-800">
+      {% for proc in stats.processes %}
+      <tr class="hover:bg-gray-800/40 transition">
+        <td class="px-5 py-2.5 font-mono text-xs text-gray-500">{{ proc.pid }}</td>
+        <td class="px-5 py-2.5">
+          <span class="text-sm text-gray-300 font-medium">{{ proc.name }}</span>
+        </td>
+        <td class="px-5 py-2.5 text-xs font-mono text-gray-500">{{ proc.username|default:"–" }}</td>
+        <td class="px-5 py-2.5 text-center">
+          {% with c=proc.cpu_percent %}
+          <span class="text-xs font-mono font-semibold
+                       {% if c >= 50 %}text-red-400{% elif c >= 20 %}text-yellow-400{% else %}text-gray-300{% endif %}">
+            {{ c|floatformat:1 }}%
+          </span>
+          {% endwith %}
+        </td>
+        <td class="px-5 py-2.5 text-center">
+          {% with m=proc.memory_percent %}
+          <span class="text-xs font-mono
+                       {% if m >= 10 %}text-orange-400{% else %}text-gray-400{% endif %}">
+            {{ m|floatformat:1 }}%
+          </span>
+          {% endwith %}
+        </td>
+        <td class="px-5 py-2.5 text-center">
+          {% if proc.status == 'running' %}
+          <span class="inline-flex items-center gap-1 text-xs bg-green-900/30 text-green-400 border border-green-800 px-2 py-0.5 rounded-full">
+            <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>running
+          </span>
+          {% elif proc.status == 'sleeping' %}
+          <span class="text-xs text-gray-600">sleeping</span>
+          {% else %}
+          <span class="text-xs text-gray-500">{{ proc.status }}</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

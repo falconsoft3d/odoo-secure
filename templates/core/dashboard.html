@@ -1,0 +1,213 @@
+{% extends 'core/layout.html' %}
+
+{% block title %}Dashboard – Odoo Secure{% endblock %}
+{% block page_title %}Dashboard de Seguridad{% endblock %}
+{% block page_subtitle %}Visión general del estado de tus servidores Odoo{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'server_add' %}"
+   class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold
+          px-4 py-2 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-gray-900">
+  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+  </svg>
+  Agregar servidor
+</a>
+{% endblock %}
+
+{% block content %}
+
+  <!-- Stat cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
+
+    <!-- Servidores -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-xs font-medium text-gray-400 uppercase tracking-wider">Servidores</span>
+        <div class="w-8 h-8 rounded-lg bg-blue-900/50 flex items-center justify-center">
+          <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>
+          </svg>
+        </div>
+      </div>
+      <p class="text-3xl font-bold text-white">{{ stats.0.value }}</p>
+      <p class="text-xs text-gray-500 mt-1">Monitoreados</p>
+    </div>
+
+    <!-- Alertas -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-xs font-medium text-gray-400 uppercase tracking-wider">Alertas</span>
+        <div class="w-8 h-8 rounded-lg bg-red-900/50 flex items-center justify-center">
+          <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+          </svg>
+        </div>
+      </div>
+      <p class="text-3xl font-bold text-white">{{ stats.1.value }}</p>
+      <p class="text-xs text-gray-500 mt-1">Activas</p>
+    </div>
+
+    <!-- Revisiones -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-xs font-medium text-gray-400 uppercase tracking-wider">Revisiones</span>
+        <div class="w-8 h-8 rounded-lg bg-green-900/50 flex items-center justify-center">
+          <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+      </div>
+      <p class="text-3xl font-bold text-white">{{ stats.2.value }}</p>
+      <p class="text-xs text-gray-500 mt-1">Hoy</p>
+    </div>
+
+    <!-- Módulos -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-xs font-medium text-gray-400 uppercase tracking-wider">Módulos</span>
+        <div class="w-8 h-8 rounded-lg bg-purple-900/50 flex items-center justify-center">
+          <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 3l8 4v5c0 5-3.5 9.3-8 11C7.5 21.3 4 17 4 12V7l8-4z"/>
+          </svg>
+        </div>
+      </div>
+      <p class="text-3xl font-bold text-white">{{ stats.3.value }}</p>
+      <p class="text-xs text-gray-500 mt-1">Hoy</p>
+    </div>
+  </div>
+
+  <!-- Recent activity + Quick actions -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+
+    <!-- Activity feed -->
+    <div class="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-2xl p-6">
+      <h2 class="text-sm font-semibold text-white mb-4">Actividad reciente</h2>
+      {% if recent_logs %}
+      <div class="space-y-1">
+        {% for log in recent_logs %}
+        <div class="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-gray-800/50 transition text-sm
+                    {% if log.restart_triggered %}border-l-2 border-red-600 pl-3{% endif %}">
+          <!-- Status dot -->
+          {% if log.status == 'online' %}
+          <span class="w-2 h-2 rounded-full bg-green-400 shrink-0"></span>
+          {% elif log.status == 'offline' %}
+          <span class="w-2 h-2 rounded-full bg-red-400 shrink-0"></span>
+          {% else %}
+          <span class="w-2 h-2 rounded-full bg-yellow-400 shrink-0"></span>
+          {% endif %}
+          <!-- Server name -->
+          <a href="{% url 'server_history' log.server.pk %}"
+             class="font-medium text-gray-300 hover:text-white transition truncate flex-1">
+            {{ log.server.name }}
+          </a>
+          <!-- Restart badge -->
+          {% if log.restart_triggered %}
+          <span class="text-xs {% if log.restart_success %}text-orange-400{% else %}text-red-400{% endif %} shrink-0">
+            {% if log.restart_success %}↺ reiniciado{% else %}↺ reinicio falló{% endif %}
+          </span>
+          {% endif %}
+          <!-- HTTP code -->
+          {% if log.http_code %}
+          <span class="font-mono text-xs {% if log.http_code < 400 %}text-gray-500{% else %}text-red-400{% endif %} shrink-0">
+            {{ log.http_code }}
+          </span>
+          {% endif %}
+          <!-- Time -->
+          <span class="text-xs text-gray-600 font-mono shrink-0">{{ log.checked_at|date:"H:i:s" }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="flex flex-col items-center justify-center py-12 text-center">
+        <svg class="w-10 h-10 text-gray-700 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+        <p class="text-sm text-gray-500">No hay actividad registrada aún.</p>
+        <p class="text-xs text-gray-600 mt-1">El monitor chequea cada minuto.</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Quick actions -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+      <h2 class="text-sm font-semibold text-white mb-4">Acciones rápidas</h2>
+      <div class="space-y-2">
+        <a href="{% url 'server_add' %}"
+           class="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-800
+                  border border-gray-700 hover:border-brand-600 text-sm text-gray-300 hover:text-white transition">
+          <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          Agregar servidor
+        </a>
+        <a href="{% url 'servers' %}"
+           class="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-800
+                  border border-gray-700 hover:border-brand-600 text-sm text-gray-300 hover:text-white transition">
+          <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>
+          </svg>
+          Ver servidores
+        </a>
+        <a href="{% url 'security' %}"
+           class="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-800
+                  border border-gray-700 hover:border-brand-600 text-sm text-gray-300 hover:text-white transition">
+          <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+          </svg>
+          Ver accesos SSH
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Security events feed -->
+  <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-sm font-semibold text-white">Últimos eventos de seguridad</h2>
+      <a href="{% url 'security' %}" class="text-xs text-brand-400 hover:text-brand-300 transition">Ver todos →</a>
+    </div>
+    {% if recent_security %}
+    <div class="space-y-1">
+      {% for ev in recent_security %}
+      <div class="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-gray-800/50 transition text-sm
+                  {% if ev.event_type == 'ssh_fail' or ev.event_type == 'ssh_invalid' %}border-l-2 border-red-700{% elif ev.event_type == 'ssh_success' %}border-l-2 border-green-700{% endif %}">
+        <!-- dot -->
+        {% if ev.event_type == 'ssh_fail' or ev.event_type == 'ssh_invalid' %}
+        <span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
+        {% elif ev.event_type == 'ssh_success' %}
+        <span class="w-2 h-2 rounded-full bg-green-500 shrink-0"></span>
+        {% else %}
+        <span class="w-2 h-2 rounded-full bg-yellow-500 shrink-0"></span>
+        {% endif %}
+        <!-- type -->
+        <span class="text-xs font-medium shrink-0
+                     {% if ev.event_type == 'ssh_fail' or ev.event_type == 'ssh_invalid' %}text-red-400{% elif ev.event_type == 'ssh_success' %}text-green-400{% else %}text-yellow-400{% endif %}">
+          {% if ev.event_type == 'ssh_fail' %}SSH Fallo
+          {% elif ev.event_type == 'ssh_invalid' %}Usuario inv.
+          {% elif ev.event_type == 'ssh_success' %}SSH OK
+          {% elif ev.event_type == 'sudo' %}Sudo
+          {% else %}Otro{% endif %}
+        </span>
+        <!-- user -->
+        {% if ev.username %}<code class="text-gray-400 font-mono text-xs truncate">{{ ev.username }}</code>{% endif %}
+        <!-- ip -->
+        {% if ev.source_ip %}<code class="text-brand-400 font-mono text-xs shrink-0">{{ ev.source_ip }}</code>{% endif %}
+        <span class="ml-auto text-xs text-gray-600 font-mono shrink-0">{{ ev.timestamp|date:"H:i:s" }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-sm text-gray-600 text-center py-6">
+      Sin eventos aún. Se leen desde <code class="font-mono">/var/log/auth.log</code> cada minuto.
+    </p>
+    {% endif %}
+  </div>
+
+{% endblock %}

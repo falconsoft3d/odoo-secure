@@ -1,0 +1,121 @@
+{% extends 'core/layout.html' %}
+
+{% block title %}{{ title }} – Odoo Secure{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_subtitle %}
+  {% if object %}Edita la configuración de «{{ object.name }}»{% else %}Registra un nuevo servidor Odoo{% endif %}
+{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'servers' %}"
+   class="inline-flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white
+          text-sm font-medium px-4 py-2 rounded-lg border border-gray-700 transition">
+  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+  </svg>
+  Volver
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl">
+  <div class="bg-gray-900 border border-gray-800 rounded-2xl p-8">
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      <!-- Nombre -->
+      <div class="mb-5">
+        <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1.5">
+          {{ form.name.label }}
+        </label>
+        {{ form.name }}
+        {% if form.name.errors %}
+        <p class="text-xs text-red-400 mt-1">{{ form.name.errors|join:", " }}</p>
+        {% endif %}
+      </div>
+
+      <!-- URL -->
+      <div class="mb-5">
+        <label for="{{ form.url.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1.5">
+          {{ form.url.label }}
+        </label>
+        {{ form.url }}
+        <p class="text-xs text-gray-500 mt-1">
+          Endpoint que se consultará para verificar que el servidor responde. Ej:
+          <code class="text-green-400 font-mono">https://tudominio.com/web/health</code>
+        </p>
+        {% if form.url.errors %}
+        <p class="text-xs text-red-400 mt-1">{{ form.url.errors|join:", " }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Comando reinicio -->
+      <div class="mb-5">
+        <label for="{{ form.restart_command.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1.5">
+          {{ form.restart_command.label }}
+        </label>
+        {{ form.restart_command }}
+        <p class="text-xs text-gray-500 mt-1.5 leading-relaxed">
+          Se ejecuta en el <span class="text-gray-300 font-medium">sistema host</span>, no dentro de Docker.
+          Ejemplos:
+          <code class="text-green-400 font-mono">docker restart odoo</code> ·
+          <code class="text-green-400 font-mono">docker compose restart</code> ·
+          <code class="text-green-400 font-mono">sudo systemctl restart odoo</code>
+        </p>
+        {% if form.restart_command.errors %}
+        <p class="text-xs text-red-400 mt-1">{{ form.restart_command.errors|join:", " }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Intervalo -->
+      <div class="mb-5">
+        <label for="{{ form.check_interval.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1.5">
+          {{ form.check_interval.label }}
+        </label>
+        <div class="relative">
+          {{ form.check_interval }}
+          <span class="absolute inset-y-0 right-3 flex items-center text-xs text-gray-500 pointer-events-none">min</span>
+        </div>
+        <p class="text-xs text-gray-500 mt-1">
+          Mínimo 1 minuto · Máximo 1440 minutos (24 h) · Por defecto: <strong class="text-gray-400">5 min</strong>
+        </p>
+        {% if form.check_interval.errors %}
+        <p class="text-xs text-red-400 mt-1">{{ form.check_interval.errors|join:", " }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Activo -->
+      <div class="mb-8">
+        <label class="flex items-center gap-3 cursor-pointer select-none">
+          {{ form.is_active }}
+          <span class="text-sm font-medium text-gray-300">{{ form.is_active.label }}</span>
+        </label>
+        <p class="text-xs text-gray-500 mt-1 ml-7">
+          Si está desactivado, el servidor no será chequeado automáticamente.
+        </p>
+      </div>
+
+      <!-- Separator -->
+      <div class="border-t border-gray-800 mb-6"></div>
+
+      <!-- Actions -->
+      <div class="flex items-center gap-3">
+        <button type="submit"
+                class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold
+                       px-5 py-2.5 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-gray-900">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+          {{ action }}
+        </button>
+        <a href="{% url 'servers' %}"
+           class="text-sm text-gray-500 hover:text-gray-300 transition px-3 py-2">
+          Cancelar
+        </a>
+      </div>
+
+    </form>
+  </div>
+</div>
+{% endblock %}

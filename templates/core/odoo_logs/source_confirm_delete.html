@@ -1,0 +1,38 @@
+{% extends 'core/layout.html' %}
+
+{% block title %}Eliminar fuente – Odoo Secure{% endblock %}
+{% block page_title %}Eliminar fuente de log{% endblock %}
+
+{% block content %}
+<div class="max-w-md">
+  <div class="bg-gray-900 border border-red-900/40 rounded-2xl p-6">
+    <div class="flex items-start gap-4 mb-5">
+      <div class="w-10 h-10 rounded-xl bg-red-900/30 flex items-center justify-center shrink-0">
+        <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+      </div>
+      <div>
+        <p class="text-white font-semibold">¿Eliminar esta fuente?</p>
+        <p class="text-sm text-gray-400 mt-1">
+          Se eliminará la fuente <strong class="text-white">{{ object.name }}</strong>
+          (<code class="font-mono text-xs">{{ object.log_path }}</code>) y todos sus registros de log guardados.
+          Esta acción no se puede deshacer.
+        </p>
+      </div>
+    </div>
+    <form method="post" class="flex gap-3">
+      {% csrf_token %}
+      <button type="submit"
+              class="bg-red-700 hover:bg-red-600 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition">
+        Sí, eliminar
+      </button>
+      <a href="{% url 'odoo_log_sources' %}"
+         class="bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm px-5 py-2.5 rounded-lg border border-gray-700 transition">
+        Cancelar
+      </a>
+    </form>
+  </div>
+</div>
+{% endblock %}

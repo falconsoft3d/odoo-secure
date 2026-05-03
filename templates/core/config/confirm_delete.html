@@ -1,0 +1,73 @@
+{% extends 'core/layout.html' %}
+
+{% block title %}Eliminar servidor – Odoo Secure{% endblock %}
+{% block page_title %}Eliminar servidor{% endblock %}
+{% block page_subtitle %}Esta acción no se puede deshacer{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'servers' %}"
+   class="inline-flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white
+          text-sm font-medium px-4 py-2 rounded-lg border border-gray-700 transition">
+  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+  </svg>
+  Volver
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-lg">
+  <div class="bg-gray-900 border border-red-900/50 rounded-2xl p-8">
+
+    <!-- Warning icon -->
+    <div class="flex items-center justify-center w-14 h-14 rounded-2xl bg-red-900/30 border border-red-800/60 mb-6">
+      <svg class="w-7 h-7 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+      </svg>
+    </div>
+
+    <h2 class="text-lg font-semibold text-white mb-2">¿Eliminar «{{ object.name }}»?</h2>
+    <p class="text-sm text-gray-400 mb-6">
+      Se eliminará permanentemente la configuración de este servidor, incluyendo su URL de comprobación,
+      comando de reinicio e intervalo configurado. Esta acción <strong class="text-red-400">no se puede deshacer</strong>.
+    </p>
+
+    <!-- Detail summary -->
+    <div class="bg-gray-800/60 border border-gray-700 rounded-xl px-4 py-3 mb-6 space-y-2 text-sm">
+      <div class="flex gap-3">
+        <span class="text-gray-500 w-28 shrink-0">URL</span>
+        <span class="text-gray-300 font-mono text-xs truncate">{{ object.url }}</span>
+      </div>
+      <div class="flex gap-3">
+        <span class="text-gray-500 w-28 shrink-0">Intervalo</span>
+        <span class="text-gray-300">{{ object.check_interval }} min</span>
+      </div>
+      <div class="flex gap-3">
+        <span class="text-gray-500 w-28 shrink-0">Comando</span>
+        <code class="text-green-400 font-mono text-xs truncate">{{ object.restart_command|truncatechars:60 }}</code>
+      </div>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="flex items-center gap-3">
+        <button type="submit"
+                class="inline-flex items-center gap-2 bg-red-700 hover:bg-red-600 text-white text-sm font-semibold
+                       px-5 py-2.5 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-900">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+          </svg>
+          Sí, eliminar
+        </button>
+        <a href="{% url 'servers' %}"
+           class="text-sm text-gray-500 hover:text-gray-300 transition px-3 py-2">
+          Cancelar
+        </a>
+      </div>
+    </form>
+
+  </div>
+</div>
+{% endblock %}
