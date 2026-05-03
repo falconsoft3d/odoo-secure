@@ -28,7 +28,7 @@ WORKDIR /app
 #   procps      → provides ps/kill for debugging
 RUN apt-get update && apt-get install -y --no-install-recommends \
         docker.io \
-        systemctl \
+        util-linux \
         procps \
     && rm -rf /var/lib/apt/lists/*
 
